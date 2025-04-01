@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/TodoApi/TodoApi.csproj" />
+    <Project Path="src/TodoApp/TodoApp.csproj" />
   </Folder>
 </Solution>
