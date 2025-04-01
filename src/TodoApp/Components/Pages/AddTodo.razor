@@ -1,0 +1,37 @@
+@page "/add"
+@using TodoApp.Models
+@inject HttpClient Http
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<h3>Ajouter une tâche</h3>
+
+<EditForm Model="todo" OnValidSubmit="HandleValidSubmit" FormName="AddTodo">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Titre</label>
+        <InputText class="form-control" @bind-Value="todo.Title" @oninput='e => Console.WriteLine($"Todo Title: {todo.Title}")' />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+</EditForm>
+
+@code {
+    private TodoItem todo = new();
+
+    private async Task HandleValidSubmit()
+    {
+        var response = await Http.PostAsJsonAsync("todos", todo);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/todos");
+        }
+        else
+        {
+            Console.WriteLine("Erreur lors de l'ajout !");
+        }
+    }
+}
