@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Data;
+using TodoApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,31 +17,26 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
 app.MapGet("/", () => "SERVER IS RUNNING!")
     .WithName("GetRoot");
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/todos", async (TodoContext db) =>
+    await db.TodoItems.ToListAsync()
+);
+
+app.MapGet("/todos/{id}", async (int id, TodoContext db) =>
+    await db.TodoItems.FirstOrDefaultAsync(todo => todo.Id == id)
+);
+
+app.MapPost("/todos", async (TodoItem todo, TodoContext db) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    // Modification d'un record
+    // var todo1 = new TodoItem(1, "Creer le site Blazor pour le cours", false);
+    // var todo2 = todo1 with { IsDone = true};
+
+    db.TodoItems.Add(todo);
+    await db.SaveChangesAsync();
+    return Results.Created($"/todos/{todo.Id}", todo);
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
