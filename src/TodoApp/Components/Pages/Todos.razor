@@ -1,0 +1,41 @@
+@page "/todos"
+@using TodoApp.Models
+@inject HttpClient Http
+@inject ILogger<Todos> Logger
+
+<h3>Liste des tâches</h3>
+
+@if (todos is null)
+{
+    <p>Loading...</p>
+}
+else if (todos.Count == 0)
+{
+    <p>Aucune tâche trouvée.</p>
+}
+else
+{
+    <ul>
+        @foreach (var todo in todos)
+        {
+            <li>@todo.Title</li>
+        }
+    </ul>
+}
+
+@code {
+    private List<TodoItem> todos = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            todos = await Http.GetFromJsonAsync<List<TodoItem>>("todos") ?? [];
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors de la récupération des tâches");
+            todos = [];
+        }
+    }
+}
