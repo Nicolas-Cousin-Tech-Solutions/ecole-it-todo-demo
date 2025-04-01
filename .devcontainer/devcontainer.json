@@ -1,0 +1,24 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+{
+	"name": "C# (.NET)",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/dotnet:1-9.0",
+	"features": {
+		"ghcr.io/devcontainers/features/dotnet:2": {},
+		"ghcr.io/dotnet/aspire-devcontainer-feature/dotnetaspire:1": {}
+	},
+
+	"customizations":{
+		"vscode": {
+			"extensions": [
+				"vsls-contrib.codetour",
+				"ms-dotnettools.csharp",
+				"GitHub.vscode-pull-request-github",
+				"MS-vsliveshare.vsliveshare",
+				"VisualStudioExptTeam.vscodeintellicode"
+			]
+		}
+	},
+	"remoteUser": "vscode"
+}
