@@ -32,38 +32,17 @@ app.MapGet("/todos/{id}", async (int id, TodoContext db) =>
 .WithName("GetTodo")
 .WithDescription("Get the todo with the provided id or null.");
 
-app.MapPut("/todos/{id}", async (int id, TodoItem todo, TodoContext db) =>
-    {
-        var todoToRemove = await db.TodoItems.FirstOrDefaultAsync(todo => todo.Id == id);
+app.MapPut("/todos/{id}", (int id, TodoItemUpdate updated, TodoContext db) =>
+{
+    var existing = db.TodoItems.Find(id);
+    if (existing is null) return Results.NotFound();
 
-        if (todoToRemove is { })
-        {
-            db.TodoItems.Remove(todoToRemove);
-            db.TodoItems.Add(todo);
-            await db.SaveChangesAsync();
-        }
-        
-        return Results.Ok(todo);
-    }
-)
-.WithName("UpdateTodoWithTodoItem");
-
-
-app.MapPut("/todos/{id}/done", async (int id, TodoContext db) =>
-    {
-        var todo = await db.TodoItems.FirstOrDefaultAsync(todo => todo.Id == id);
-
-        if (todo is { IsDone: false })
-        {
-            db.TodoItems.Remove(todo);
-            db.TodoItems.Add(todo with {IsDone = true});
-            await db.SaveChangesAsync();
-        }
-
-        return Results.Ok(todo);
-     }
-)
-.WithName("UpdateTodoItemAsDone");
+    var updatedItem = existing with { IsDone = updated.IsDone };
+    db.Entry(existing).CurrentValues.SetValues(updatedItem);
+    
+    db.SaveChanges();
+    return Results.NoContent();
+});
 
 app.MapPost("/todos", async (TodoItem todo, TodoContext db) =>
 {
@@ -92,3 +71,5 @@ app.MapDelete("/todos/{id}", async (int id, TodoContext db) =>
 });
 
 app.Run();
+
+record TodoItemUpdate(bool IsDone);

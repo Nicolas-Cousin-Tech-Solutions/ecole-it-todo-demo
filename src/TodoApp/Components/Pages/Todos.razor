@@ -18,7 +18,21 @@ else
     <ul>
         @foreach (var todo in todos)
         {
-            <li>@todo.Title</li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@todo.Title</span>
+                @if (todo.IsDone)
+                {
+                    <span class="ms-2 text-success">
+                        <i class="bi bi-check-circle-fill"></i> <!-- Icône Bootstrap -->
+                    </span>
+                }
+                else
+                {
+                    <button class="btn btn-sm btn-outline-success ms-2" @onclick="() => MarkAsDone(todo)">
+                        <i class="bi bi-check-circle"></i> <!-- Icône cliquable -->
+                    </button>
+                }
+            </li>
         }
     </ul>
 }
@@ -28,14 +42,36 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadTodos();
+    }
+
+    private async Task LoadTodos()
+    {
         try
         {
             todos = await Http.GetFromJsonAsync<List<TodoItem>>("todos") ?? [];
         }
-        catch (Exception ex)
+        catch
         {
-            Logger.LogError(ex, "Erreur lors de la récupération des tâches");
+            Console.WriteLine("Erreur lors de la récupération des tâches");
             todos = [];
+        }
+    }
+
+    private async Task MarkAsDone(TodoItem todo)
+    {
+        var updated = new { IsDone = true };
+
+        var response = await Http.PutAsJsonAsync($"todos/{todo.Id}", new { IsDone = true });
+
+        if (response.IsSuccessStatusCode)
+        {
+            todo.IsDone = true; // Met à jour localement aussi
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine("Erreur lors de la mise à jour");
         }
     }
 }
