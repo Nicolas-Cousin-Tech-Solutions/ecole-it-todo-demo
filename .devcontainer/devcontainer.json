@@ -20,5 +20,6 @@
 			]
 		}
 	},
+	"postCreateCommand": "dotnet dev-certs https",
 	"remoteUser": "vscode"
 }
