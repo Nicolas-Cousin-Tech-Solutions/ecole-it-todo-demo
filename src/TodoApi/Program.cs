@@ -1,13 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Data;
 using TodoApi.Models;
+using TodoApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<TodoContext>(options =>
-    options.UseInMemoryDatabase("TodoList"));
+builder
+.Services
+.AddDbContext<TodoContext>(
+    options => options.UseInMemoryDatabase("TodoList"));
 
 builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<ITodoService, TodoService>();
 
 var app = builder.Build();
 
@@ -17,59 +24,42 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.MapGet("/", () => "SERVER IS RUNNING!")
     .WithName("GetRoot");
 
-app.MapGet("/todos", async (TodoContext db) =>
-    await db.TodoItems.ToListAsync()
-)
-.WithName("GetTodos")
-.WithDescription("Get the todo list.");
+app.MapGet("/todos", async (ITodoService service) =>
+    await service.GetAll()
+);
 
-app.MapGet("/todos/{id}", async (int id, TodoContext db) =>
-    await db.TodoItems.FirstOrDefaultAsync(todo => todo.Id == id)
-)
-.WithName("GetTodo")
-.WithDescription("Get the todo with the provided id or null.");
-
-app.MapPut("/todos/{id}", (int id, TodoItemUpdate updated, TodoContext db) =>
-{
-    var existing = db.TodoItems.Find(id);
-    if (existing is null) return Results.NotFound();
-
-    var updatedItem = existing with { IsDone = updated.IsDone };
-    db.Entry(existing).CurrentValues.SetValues(updatedItem);
-    
-    db.SaveChanges();
-    return Results.NoContent();
+app.MapPost("/todos", async (TodoItem todoItem, TodoContext db) => {
+    db.TodoItems.Add(todoItem);
+    await db.SaveChangesAsync();
+    return Results.Created($"/todos/{todoItem.Id}", todoItem);
 });
 
-app.MapPost("/todos", async (TodoItem todo, TodoContext db) =>
-{
-    // Modification d'un record
-    // var todo1 = new TodoItem(1, "Creer le site Blazor pour le cours", false);
-    // var todo2 = todo1 with { IsDone = true};
+app.MapGet("/todos/{id}", async (int id, TodoContext db) => {
+    return await db.TodoItems.FindAsync(id);
+});
 
-    db.TodoItems.Add(todo);
-    await db.SaveChangesAsync();
-    return Results.Created($"/todos/{todo.Id}", todo);
-})
-.WithName("CreateTodo")
-.WithDescription("Create a new toto item.");
+app.MapPut("/todos/{id}", async (int id, TodoContext db) => {
+    var todoItem = await db.TodoItems.FindAsync(id);
 
-app.MapDelete("/todos/{id}", async (int id, TodoContext db) =>
-{
-    var todo = await db.TodoItems.FirstOrDefaultAsync(todo => todo.Id == id);
-
-    if (todo is { })
+    if (todoItem is null)
     {
-        db.TodoItems.Remove(todo);
-        await db.SaveChangesAsync();
+        return;
     }
 
-    return Results.NoContent();
+    var updatedTodoItem = todoItem with { IsDone = true };
+
+    db.TodoItems.Remove(todoItem);
+    db.TodoItems.Add(updatedTodoItem);
+
+    await db.SaveChangesAsync();
+
+    return;
 });
 
 app.Run();
-
-record TodoItemUpdate(bool IsDone);

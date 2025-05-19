@@ -2,6 +2,7 @@
 @using TodoApp.Models
 @inject HttpClient Http
 @inject ILogger<Todos> Logger
+@rendermode InteractiveServer
 
 <h3>Liste des tâches</h3>
 
@@ -18,6 +19,10 @@ else
     <ul>
         @foreach (var todo in todos)
         {
+            @if (string.IsNullOrWhiteSpace(todo.Title))
+            {
+                continue;
+            }
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <span>@todo.Title</span>
                 @if (todo.IsDone)
@@ -28,7 +33,7 @@ else
                 }
                 else
                 {
-                    <button class="btn btn-sm btn-outline-success ms-2" @onclick="() => MarkAsDone(todo)">
+                    <button class="btn btn-sm btn-outline-success ms-2" @onclick="@(e => MarkAsDone(todo))">
                         <i class="bi bi-check-circle"></i> <!-- Icône cliquable -->
                     </button>
                 }
@@ -38,7 +43,7 @@ else
 }
 
 @code {
-    private List<TodoItem> todos = [];
+    private List<TodoItem>? todos = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,7 +58,7 @@ else
         }
         catch
         {
-            Console.WriteLine("Erreur lors de la récupération des tâches");
+            Logger.LogError("Erreur lors de la récupération des tâches");
             todos = [];
         }
     }
@@ -71,7 +76,7 @@ else
         }
         else
         {
-            Console.WriteLine("Erreur lors de la mise à jour");
+            Logger.LogError("Erreur lors de la mise à jour de la tâche {Id} - {Title}", todo.Id, todo.Title);
         }
     }
 }
